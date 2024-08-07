@@ -52,6 +52,8 @@ client.on('ready', () => {
 client.on('message', async(message) => {
     const media = MessageMedia.fromFilePath('img/feed-1.png');
     const body = message.body.toLocaleLowerCase();
+    const chat = client.getChatById(message.from);
+
     if(body == '!send'){
         contacts.map((contact)=>{
             let phoneNum;
@@ -84,21 +86,20 @@ client.on('message', async(message) => {
             }
         })
     }
-    if (body != '1') {
-        if (body == '2') {
-            client.sendMessage(message.from, messages.list);
-        }
-        if (body == '3') {
-            client.sendMessage(message.from, messages.promo);
-        }
-        if (body == '4') {
-            client.sendMessage(message.from, messages.form);
-        }
-        if (body == '5') {
-            client.sendMessage(message.from, messages.address);
-        }
-        client.sendMessage(message.from, messages.greeting)
+    if (body == '2') {
+        client.sendMessage(message.from, messages.list);
     }
+    if (body == '3') {
+        client.sendMessage(message.from, messages.promo);
+    }
+    if (body == '4') {
+        client.sendMessage(message.from, messages.form);
+    }
+    if (body == '5') {
+        client.sendMessage(message.from, messages.address);
+    }
+    client.sendMessage(message.from, messages.greeting)
+    console.log(chat);
 })
 
 client.on('qr', qr => {
