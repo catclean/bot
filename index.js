@@ -3,21 +3,11 @@ const fs = require('node:fs');
 const file = JSON.parse(fs.readFileSync('contacts.json', 'utf-8'));
 const contacts = file.contacts;
 
-// const contacts = ["6281360972565","22","628"]
+const messages = JSON.parse(fs.readFileSync('messages.json', 'utf-8'));
 
 const { Client, LocalAuth, MessageMedia} = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-
-const client = new Client({
-    authStrategy: new LocalAuth()
-});
-
-client.on('ready', () => {
-    console.log('Client is ready!');
-});
-
-client.on('message', async(message) => {
-    const caption = '*[PROMO SPESIAL]*\n' +
+const caption = '*[PROMO SPESIAL]*\n' +
     'Layanan Grooming Home Service.\n' +      
     '*Discount 20%* untuk *SEMUA* jenis grooming!\n' +
     '\n' +
@@ -47,8 +37,22 @@ client.on('message', async(message) => {
     'Tunggu apa lagi? Hubungi kami sekarang! \n' +
     '�📞 WhatsApp: 087883977436\n' +
     '�📸 Instagram: @catclean.medan';
+
+const orderText = 'Terimakasih sudah order jasa kami.\n'+
+    'Silahkan isi formulir dibawah'
+
+const client = new Client({
+    authStrategy: new LocalAuth()
+});
+
+client.on('ready', () => {
+    console.log('Client is ready!');
+});
+
+client.on('message', async(message) => {
     const media = MessageMedia.fromFilePath('img/feed-1.png');
-    if(message.body == '!send'){
+    const body = message.body.toLocaleLowerCase();
+    if(body == '!send'){
         contacts.map((contact)=>{
             let phoneNum;
             const firstNum = contact.split('')[0]
@@ -79,7 +83,21 @@ client.on('message', async(message) => {
                 }
             }
         })
-    }   
+    }
+    if (body != '1') {
+        if (body == '2') {
+            client.sendMessage(message.from, messages.list);
+        }
+        if (body == '3') {
+            client.sendMessage(message.from, messages.promo);
+        }
+        if (body == '4') {
+            client.sendMessage(message.from, messages.form);
+        }
+        if (body == '5') {
+            client.sendMessage(message.from, messages.address);
+        }
+    }
 })
 
 client.on('qr', qr => {
