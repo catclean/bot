@@ -97,6 +97,7 @@ client.on('message', async(message) => {
         if (body == '5') {
             client.sendMessage(message.from, messages.address);
         }
+        client.sendMessage(message.from, messages.greeting)
     }
 })
 
