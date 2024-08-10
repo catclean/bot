@@ -1,12 +1,16 @@
 const fs = require("node:fs");
+let date = new Date(Date.now());
+let hour = "0" + date.getHours();
+let minute = "0" + date.getMinutes();
 
-const file = JSON.parse(fs.readFileSync("./db/contacts.json", "utf-8"));
-const contacts = file.contacts;
 const replyMessages = JSON.parse(
   fs.readFileSync("./db/reply-messages.json", "utf-8")
 );
-const clientMessagesData = JSON.parse(
-  fs.readFileSync("./db/client-message-data.json", "utf-8")
+let clientMessagesData = JSON.parse(
+  fs.readFileSync("./db/client-messages-data.json", "utf-8")
+);
+let notifyCustomers = JSON.parse(
+  fs.readFileSync("./db/notify-customers.json", "utf-8")
 );
 
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
@@ -14,7 +18,7 @@ const qrcode = require("qrcode-terminal");
 
 let chatId;
 let assistant = true;
-let data = {};
+let isOpen = true;
 
 const client = new Client({
   authStrategy: new LocalAuth(),
@@ -32,37 +36,78 @@ client.on("message", async (message) => {
   const ts = message.timestamp * 1000;
   const chat = await client.getChatById(message.from);
 
+  // const messagesData = clientMessagesData.find(cd => cd.chatId == from)
+  // const timestamp = messagesData.timestamp;
+  // const dataDate = new Date(timestamp);
+
   if (type == "chat") {
-    if (body == "/assistant") {
-      assistant = true;
-      client.sendMessage(from, replyMessages.greeting);
-    } else {
-      if (assistant) {
-        if (chatId == from) {
-          if (body == "1") {
-            client.sendMessage(from, replyMessages.adm);
-            assistant = false;
+    if (body.toLowerCase() == "/close") {
+      isOpen = false;
+    }
+    if (body.toLowerCase() == "/open") {
+      isOpen = true;
+      notifyCustomers.map((customer) => {
+        client.sendMessage(customer.chatId, replyMessages.backActive);
+      });
+      fs.writeFileSync("./db/notify-customers.json", "[]", "utf-8");
+    }
+    if (isOpen) {
+      if (body.toLowerCase() == "/assistant") {
+        assistant = true;
+        client.sendMessage(from, replyMessages.greeting);
+      } else {
+        if (assistant) {
+          // if (hour >= 10 && hour < 17) {
+          if (chatId == from) {
+            if (body.toLowerCase().includes("order")) {
+              client.sendMessage(from, replyMessages.tfo);
+            } else {
+              if (body == "1") {
+                client.sendMessage(from, replyMessages.adm);
+                assistant = false;
+              }
+              if (body == "2") {
+                client.sendMessage(from, replyMessages.list);
+              }
+              if (body == "3") {
+                client.sendMessage(from, replyMessages.type);
+              }
+              if (body == "4") {
+                client.sendMessage(from, media, {
+                  caption: replyMessages.promo,
+                });
+              }
+              if (body == "5") {
+                client.sendMessage(from, replyMessages.form);
+              }
+              if (body == "6") {
+                client.sendMessage(from, replyMessages.address);
+              }
+              if (body == "7") {
+                client.sendMessage(from, replyMessages.operationalHour);
+              }
+              if (body.toLowerCase() == "/term") {
+                client.sendMessage(from, replyMessages.term);
+              }
+            }
+          } else {
+            chatId = from;
+            client.sendMessage(from, replyMessages.greeting);
           }
-          if (body == "2") {
-            client.sendMessage(from, replyMessages.list);
-          }
-          if (body == "3") {
-            client.sendMessage(from, media, { caption: replyMessages.promo });
-          }
-          if (body == "4") {
-            client.sendMessage(from, replyMessages.form);
-          }
-          if (body == "5") {
-            client.sendMessage(from, replyMessages.address);
-          }
-          if (body == "6") {
-            client.sendMessage(from, replyMessages.term);
-          }
-        } else {
-          client.sendMessage(from, replyMessages.greeting);
-          chatId = from;
+          // } else {
+          //   client.sendMessage(from, replyMessages.oos);
+          // }
         }
       }
+    } else {
+      const data = { chatId: from };
+      notifyCustomers.push(data);
+      fs.writeFileSync(
+        "./db/notify-customers.json",
+        JSON.stringify(notifyCustomers),
+        "utf-8"
+      );
+      client.sendMessage(from, replyMessages.close);
     }
   }
 });
